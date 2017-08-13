@@ -7,6 +7,7 @@ import android.util.Log
 import android.util.TypedValue
 import android.view.MotionEvent
 import android.view.View
+import org.joda.time.DateTime
 import java.util.*
 
 /**
@@ -27,14 +28,17 @@ class DayScheduleView @JvmOverloads constructor(context: Context, attrs: Attribu
     var hourHeightMultiplier = DEFAULT_HOUR_HEIGHT_MULTIPLIER
     var calculatedDayHeight: Int
 
+    private var leftMargin = applyDimension(8f)
     var hourTextMargin: Float
     val screenRect = Rect()
-    val hourTextRect = Rect()
 
+    val hourTextRect = Rect()
     var hourTextPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     var backgroundPaint = Paint()
-    var eventSeparatorPaint = Paint()
+    var hourSeparatorPaint = Paint()
     var addNewEventTextPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    var timelinePaint = Paint()
+
     var addNewEventPaint = Paint(Paint.ANTI_ALIAS_FLAG)
 
     var touchedHourRect = RectF()
@@ -44,22 +48,23 @@ class DayScheduleView @JvmOverloads constructor(context: Context, attrs: Attribu
     private lateinit var onAddEventClickListener: DayScheduleView.OnAddEventClickListener
 
     init {
-        calculatedDayHeight = (applyDimension(MINUTES_IN_DAY) * hourHeightMultiplier).toInt()
+        calculatedDayHeight = applyDimension(MINUTES_IN_DAY * hourHeightMultiplier).toInt()
 
-        eventSeparatorPaint.strokeWidth = applyDimension(0.5f)
-        eventSeparatorPaint.color = Color.GRAY
+        hourSeparatorPaint.strokeWidth = applyDimension(0.5f)
+        hourSeparatorPaint.color = Color.parseColor("#EEEEEE")
 
         backgroundPaint.color = Color.WHITE
         addNewEventTextPaint.color = Color.WHITE
         addNewEventTextPaint.textSize = applyDimension(18f)
-        addNewEventPaint.color = Color.BLACK
+        addNewEventPaint.color = Color.parseColor("#AEB0FF")
+        timelinePaint.color = Color.parseColor("#AEB0FF")
+        timelinePaint.strokeWidth = applyDimension(2f)
 
-        hourTextPaint.textSize = applyDimension(14f)
-        hourTextPaint.isSubpixelText = true
+        hourTextPaint.textSize = applyDimension(13f)
         hourTextPaint.color = Color.GRAY
         hourTextPaint.getTextBounds(TIME_PATTERN, 0, TIME_PATTERN.length, hourTextRect)
 
-        hourTextMargin = applyDimension(48f)
+        hourTextMargin = applyDimension(60f)
 
         initializeHourRects()
     }
@@ -77,7 +82,7 @@ class DayScheduleView @JvmOverloads constructor(context: Context, attrs: Attribu
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         val width = MeasureSpec.getSize(widthMeasureSpec)
-        val height = calculatedDayHeight
+        val height = calculatedDayHeight + applyDimension(16f).toInt()
         screenRect.set(0, 0, width, height)
         setMeasuredDimension(width, height)
 //        Log.d("measureSpec: ", "wMeasureSpec: ".plus(widthMeasureSpec).plus(" hMeasureSpec: ".plus(heightMeasureSpec)))
@@ -113,44 +118,50 @@ class DayScheduleView @JvmOverloads constructor(context: Context, attrs: Attribu
         }
     }
 
-
-override fun onDraw(canvas: Canvas?) {
-    canvas?.drawRect(screenRect, backgroundPaint)
-    drawHourTextAndSeparators(canvas)
-
-    touchedHourRect.let {
-        drawAddNewEventRect(canvas)
+    override fun onDraw(canvas: Canvas) {
+        canvas.drawRect(screenRect, backgroundPaint)
+        drawHourTextAndSeparators(canvas)
+        drawTimeline(canvas)
+        touchedHourRect.let {
+            drawAddNewEventRect(canvas)
+        }
     }
-}
 
-private fun drawHourTextAndSeparators(canvas: Canvas?) {
-    for (i in 0..HOURS_IN_DAY) {
-        canvas?.drawText(if (i.toString().length < 2) "0%d:00".format(i) else "%2d:00".format(i),
-                applyDimension(4f),
-                (i * applyDimension(MINUTES_IN_HOUR) * hourHeightMultiplier) - hourTextRect.centerY(),
-                hourTextPaint)
-        canvas?.drawLine(hourTextMargin,
-                i * applyDimension(MINUTES_IN_HOUR) * hourHeightMultiplier,
-                width.toFloat() - applyDimension(4f),
-                i * applyDimension(MINUTES_IN_HOUR) * hourHeightMultiplier,
-                eventSeparatorPaint)
+    private fun drawTimeline(canvas: Canvas) {
+        var time = DateTime.now()
+        var linePositionX = hourTextMargin - applyDimension(10f)
+        canvas.drawLine(linePositionX, 0f, linePositionX, applyDimension(time.minuteOfDay().get().toFloat() * hourHeightMultiplier), timelinePaint)
     }
-}
 
-fun drawAddNewEventRect(canvas: Canvas?) {
-    canvas?.drawRoundRect(touchedHourRect, 15f, 15f, addNewEventPaint)
-    canvas?.drawText("+ Add new event", touchedHourRect.left + applyDimension(16f), touchedHourRect.centerY(), addNewEventTextPaint)
-}
+    private fun drawHourTextAndSeparators(canvas: Canvas) {
+        for (i in 0..HOURS_IN_DAY) {
+            canvas.drawLine(hourTextMargin,
+                    i * applyDimension(MINUTES_IN_HOUR) * hourHeightMultiplier,
+                    width.toFloat() - applyDimension(4f),
+                    i * applyDimension(MINUTES_IN_HOUR) * hourHeightMultiplier,
+                    hourSeparatorPaint)
+            if (i == 0) continue
+            canvas.drawText(if (i < 10) "0%d:00".format(i) else "%2d:00".format(i),
+                    leftMargin,
+                    (i * applyDimension(MINUTES_IN_HOUR) * hourHeightMultiplier) - hourTextRect.centerY(),
+                    hourTextPaint)
+        }
+    }
 
-fun applyDimension(valueInDip: Float): Float {
-    return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, valueInDip, resources.displayMetrics)
-}
+    fun drawAddNewEventRect(canvas: Canvas) {
+        canvas.drawRoundRect(touchedHourRect, 15f, 15f, addNewEventPaint)
+        canvas.drawText("+ Add new training", touchedHourRect.left + applyDimension(16f), touchedHourRect.centerY(), addNewEventTextPaint)
+    }
 
-fun setOnAddEventClickListener(listener: OnAddEventClickListener) {
-    this.onAddEventClickListener = listener
-}
+    fun applyDimension(valueInDip: Float): Float {
+        return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, valueInDip, resources.displayMetrics)
+    }
 
-interface OnAddEventClickListener {
-    fun onClick()
-}
+    fun setOnAddEventClickListener(listener: OnAddEventClickListener) {
+        this.onAddEventClickListener = listener
+    }
+
+    interface OnAddEventClickListener {
+        fun onClick()
+    }
 }

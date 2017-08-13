@@ -1,20 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/container"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fitsSystemWindows="true"
-    android:gravity="bottom"
-    android:orientation="vertical"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
     tools:context="io.finefabric.fitfreaker.MainActivity">
 
-    <ScrollView
+    <Toolbar
+        android:id="@+id/toolbar"
+        android:layout_alignParentTop="true"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_marginTop="?actionBarSize">
+        android:elevation="4dp"
+        android:titleTextColor="#777777"
+        android:subtitleTextColor="#777777"
+        android:layout_height="60dp" />
+
+    <ScrollView
+        android:id="@+id/scroll_view"
+        android:layout_below="@id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
 
         <io.finefabric.fitfreaker.DayScheduleView
             android:id="@+id/day_view"
@@ -28,16 +36,19 @@
         android:id="@+id/message"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_below="@id/toolbar"
         android:layout_marginStart="@dimen/activity_horizontal_margin"
         android:layout_marginTop="@dimen/activity_vertical_margin"
         android:text="@string/title_home"
         android:visibility="gone" />
 
     <android.support.design.widget.BottomNavigationView
+        android:layout_below="@id/scroll_view"
         android:id="@+id/navigation"
         android:layout_width="match_parent"
         android:layout_height="60dp"
         android:background="?android:attr/windowBackground"
-        app:menu="@menu/navigation" />
+        app:menu="@menu/navigation"
+        android:layout_alignParentBottom="true" />
 
-</LinearLayout>
+</RelativeLayout>
