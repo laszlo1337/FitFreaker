@@ -38,14 +38,17 @@ class DayScheduleView @JvmOverloads constructor(context: Context, attrs: Attribu
     var hourSeparatorPaint = Paint()
     var addNewEventTextPaint = Paint(Paint.ANTI_ALIAS_FLAG)
     var timelinePaint = Paint()
+    var timelineDotPaint = Paint(Paint.ANTI_ALIAS_FLAG)
 
     var addNewEventPaint = Paint(Paint.ANTI_ALIAS_FLAG)
 
-    var touchedHourRect = RectF()
+    var noneRect = RectF()
+    var touchedHourRect = noneRect
 
     var hourRects = LinkedList<RectF>()
+    var timelineAndMarkNewEventColor = Color.parseColor("#AEB0FF")
 
-    private lateinit var onAddEventClickListener: DayScheduleView.OnAddEventClickListener
+    private var onAddEventClickListener: DayScheduleView.OnAddEventClickListener? = null
 
     init {
         calculatedDayHeight = applyDimension(MINUTES_IN_DAY * hourHeightMultiplier).toInt()
@@ -56,9 +59,10 @@ class DayScheduleView @JvmOverloads constructor(context: Context, attrs: Attribu
         backgroundPaint.color = Color.WHITE
         addNewEventTextPaint.color = Color.WHITE
         addNewEventTextPaint.textSize = applyDimension(18f)
-        addNewEventPaint.color = Color.parseColor("#AEB0FF")
-        timelinePaint.color = Color.parseColor("#AEB0FF")
+        addNewEventPaint.color = timelineAndMarkNewEventColor
+        timelinePaint.color = timelineAndMarkNewEventColor
         timelinePaint.strokeWidth = applyDimension(2f)
+        timelineDotPaint.color = timelineAndMarkNewEventColor
 
         hourTextPaint.textSize = applyDimension(13f)
         hourTextPaint.color = Color.GRAY
@@ -92,7 +96,11 @@ class DayScheduleView @JvmOverloads constructor(context: Context, attrs: Attribu
     override fun onTouchEvent(event: MotionEvent?): Boolean {
 
         when (event?.action) {
-            MotionEvent.ACTION_SCROLL -> return false
+            MotionEvent.ACTION_SCROLL -> {
+                touchedHourRect = noneRect
+                invalidate()
+                return true
+            }
             MotionEvent.ACTION_DOWN -> {
                 Log.d("TOUCH EVENT", "x: " + event.x + " y: " + event.y)
                 handleTouch(event)
@@ -122,15 +130,19 @@ class DayScheduleView @JvmOverloads constructor(context: Context, attrs: Attribu
         canvas.drawRect(screenRect, backgroundPaint)
         drawHourTextAndSeparators(canvas)
         drawTimeline(canvas)
-        touchedHourRect.let {
-            drawAddNewEventRect(canvas)
-        }
+
+        drawAddNewEventRect(canvas)
+
     }
 
     private fun drawTimeline(canvas: Canvas) {
-        var time = DateTime.now()
-        var linePositionX = hourTextMargin - applyDimension(10f)
-        canvas.drawLine(linePositionX, 0f, linePositionX, applyDimension(time.minuteOfDay().get().toFloat() * hourHeightMultiplier), timelinePaint)
+        val time = DateTime.now()
+        val linePositionX = hourTextMargin - applyDimension(10f)
+        val currentTime = applyDimension(time.minuteOfDay().get().toFloat() * hourHeightMultiplier)
+
+        canvas.drawLine(linePositionX, 0f, linePositionX, currentTime, timelinePaint)
+
+        canvas.drawCircle(linePositionX, currentTime, applyDimension(4f), timelineDotPaint)
     }
 
     private fun drawHourTextAndSeparators(canvas: Canvas) {

@@ -1,7 +1,10 @@
 package io.finefabric.fitfreaker
 
 import android.content.Context
+import android.graphics.RectF
 import android.util.AttributeSet
+import android.view.MotionEvent
+import android.view.View
 import android.widget.ScrollView
 
 /**
@@ -15,7 +18,7 @@ class DayView @JvmOverloads constructor(context: Context, attrs: AttributeSet? =
         addView(dayshedule)
     }
 
-    fun setOnAddEventClickListener(listener: DayScheduleView.OnAddEventClickListener){
+    fun setOnAddEventClickListener(listener: DayScheduleView.OnAddEventClickListener) {
         dayshedule.setOnAddEventClickListener(listener)
     }
 }
